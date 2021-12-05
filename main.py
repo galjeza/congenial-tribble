@@ -1,4 +1,3 @@
-
 abeceda = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
            'w', 'x', 'y', 'z']
 headers = {
@@ -12,19 +11,29 @@ headers = {
 }
 imenaSlik = []
 
+znamka = ""
+pathToProfile = ""
+
+novoOkno = None
+
+
+
 
 
 def login(email, password):
+
     print("=> Prijavljam se v avto.net")
     time.sleep(10)
     try:
-        driver.find_element_by_id("CybotCookiebotDialogBodyLevelButtonAccept").click()   
+        driver.find_element_by_id("CybotCookiebotDialogBodyLevelButtonAccept").click()
     except:
-        print("...") 
+        print("...")
+
     WebDriverWait(driver, 10).until(ec.visibility_of_element_located((By.NAME, "enaslov")))
     driver.execute_script("document.getElementsByName('enaslov')[0].value='" + email + "'")
+    time.sleep(1)
     try:
-        driver.find_element_by_id("CybotCookiebotDialogBodyLevelButtonAccept").click()  
+        driver.find_element_by_id("CybotCookiebotDialogBodyLevelButtonAccept").click()
     except:
         print("...")
 
@@ -36,8 +45,11 @@ def login(email, password):
     pravnoobvestilo = driver.find_element_by_id('pravnoobvestilo')
     driver.execute_script("arguments[0].click();", pravnoobvestilo)
     driver.execute_script("arguments[0].click();", driver.find_element_by_name("LOGIN"))
-    WebDriverWait(driver, 15).until(ec.visibility_of_element_located((By.CLASS_NAME, "mojtrg")))
+    time.sleep(2)
+    WebDriverWait(driver, 10000).until(ec.visibility_of_element_located((By.CLASS_NAME, "mojtrg")))
     print("=> prijavljen v avto.net ")
+
+
 
 def pojdiNaUredi(url):
     print("=> Pridobivam slike oglasa")
@@ -51,10 +63,12 @@ def pojdiNaUredi(url):
         id = url.split("id=")[1]
         urediUrl = "https://www.avto.net/_2016mojavtonet/ad_edit.asp?id=" + id
 
-    kilometri = WebDriverWait(driver, 10).until(ec.visibility_of_element_located((By.XPATH, "/html/body/div[3]/div/small/div[1]/div[2]/div/div[7]/div[2]")))
+    kilometri = WebDriverWait(driver, 30).until(
+        ec.visibility_of_element_located((By.XPATH, "/html/body/div[3]/div/small/div[1]/div[2]/div/div[7]/div[2]")))
     kilometri = kilometri.text.strip()
     kilometri = re.sub('[^A-Za-z0-9]+', '', kilometri)
     imeAvta = driver.find_element_by_xpath("/html/body/div[3]/div/div/div/div/div/h1").text.strip()
+
     imeAvta = re.sub('[^A-Za-z0-9]+', '', imeAvta)
     slikeElements = driver.find_elements_by_tag_name("p")
     i = 1
@@ -79,18 +93,52 @@ def pojdiNaUredi(url):
 
 
 def ustvariNovOglasStran():
+    global znamka
     print("=> ustvarjam nov oglas")
     driver.execute_script("window.open('https://www.avto.net/_2016mojavtonet/ad_select_rubric_icons.asp?SID=10000');")
     global novOglasWindow
-    novOglasWindow = driver.window_handles[1]
+    novOglasWindow = driver.window_handles[driver.window_handles.index(originalOglasWindow)+1]
     driver.switch_to.window(novOglasWindow)
-    Select(driver.find_element_by_name("znamka")).select_by_value(znamka)
-    Select(driver.find_element_by_name("model")).select_by_value(model)
+    try:
+        driver.find_element_by_name("znamka")
+    except:
+        time.sleep(60 * 60)
+        driver.get("https://www.avto.net/_2016mojavtonet/ad_select_rubric_icons.asp?SID=10000")
+    try:
+        Select(driver.find_element_by_name("znamka")).select_by_value(znamka)
+        time.sleep(2)
+    except:
+        if (znamka == "Ssangyong"):
+            znamka = "SsangYong"
+        strippedZnamka = znamka.replace(" ", "")
+        print(strippedZnamka)
+        Select(driver.find_element_by_name("znamka")).select_by_value(strippedZnamka)
+
+    try:
+        Select(driver.find_element_by_name("model")).select_by_value(model)
+
+    except:
+        Select(driver.find_element_by_name("model")).select_by_value("modela ni na seznamu")
+    time.sleep(1)
     Select(driver.find_element_by_name("oblika")).select_by_index(0)
-    Select(driver.find_element_by_name("mesec")).select_by_value(mesReg)
-    Select(driver.find_element_by_name("leto")).select_by_visible_text(letoReg)
-    driver.find_element_by_xpath("//*[contains(text(),'" + gorivo + "')]").click()
+    time.sleep(1)
+    try:
+        Select(driver.find_element_by_name("mesec")).select_by_value(mesReg)
+    except:
+        Select(driver.find_element_by_name("mesec")).select_by_value("10")
+
+    time.sleep(1)
+    try:
+        Select(driver.find_element_by_name("leto")).select_by_visible_text(letoReg)
+    except:
+        Select(driver.find_element_by_name("leto")).select_by_visible_text("NOVO vozilo")
+    time.sleep(1)
+    driver.execute_script("arguments[0].click();",
+                          driver.find_element_by_xpath("//*[contains(text(),'" + gorivo + "')]"))
+    time.sleep(1)
+
     driver.find_element_by_name("potrdi").click()
+    time.sleep(1)
     WebDriverWait(driver, 10).until(ec.visibility_of_element_located((By.CLASS_NAME, "supurl"))).click()
 
 
@@ -108,10 +156,11 @@ def pridobiPodatkeZaPrvoStran():
     letoReg = driver.find_element_by_id("letoReg").get_attribute("value")
     select = Select(driver.find_element_by_id("mesReg"))
     mesReg = select.first_selected_option.text.strip()
+
     gorivo = driver.find_element_by_name("gorivo").get_attribute("value")
-           
     if gorivo == "elektro pogon":
-           gorivo = "e-pogon"
+        gorivo = "e-pogon"
+
     print("=> osnovni podatki o avtu pridobljeni ")
 
 
@@ -120,20 +169,23 @@ def kopirajInPrilepiPodatke(url):
     driver.switch_to.window(originalOglasWindow)
     time.sleep(2)
     inputElements = driver.find_elements_by_xpath("//input[@type='text']")
-    inputValues  = []
+    inputValues = []
     for input in inputElements:
+        time.sleep(1)
         inputValues.append(input.get_attribute("value"))
 
     textAreaElements = driver.find_elements_by_tag_name("textarea")
-    textValues= []
+    textValues = []
     for tekst in textAreaElements:
         textValues.append(tekst.text)
     selectElements = driver.find_elements_by_tag_name("select")
     selectValues = []
+    time.sleep(3)
     for select in selectElements:
+        time.sleep(1)
         selectedOption = Select(select).first_selected_option.get_attribute("value")
-        selectValues.append(selectedOption)
 
+        selectValues.append(selectedOption)
 
     checkedCheckboxes = []
     checkboxes = driver.find_elements_by_xpath("//input[@type='checkbox']")
@@ -145,30 +197,30 @@ def kopirajInPrilepiPodatke(url):
     try:
         driver.switch_to.frame(driver.find_element_by_tag_name("iframe"))
         body = driver.find_element_by_xpath("/html/body")
-        innerHTML = body.get_attribute("innerHTML").replace('"','\\"')
+        innerHTML = body.get_attribute("innerHTML").replace('"', '\\"')
+        driver.switch_to.default_content();
     except:
         print("")
-    time.sleep(3)
-    driver.switch_to.default_content()
-    time.sleep(3)
-    randoma = str(random.randint(1998,2021))
-    randomb =str(random.randint(1000, 500000))
-    randomc = str(random.randint(1000, 10000))
+    # spremeni podatek zato da nebo isti oglas v arhivu
+    randoma = str(random.randint(1998, 2021))
+    time.sleep(2)
+
+    randomc = str(int(float(driver.find_element_by_id("cena").get_attribute("value"))) + 500)
+
+    randomb = str(random.randint(100000, 300000))
     driver.find_element_by_name("letoReg").click()
     driver.find_element_by_name("letoReg").clear()
     driver.find_element_by_name("letoReg").send_keys(randoma)
+    time.sleep(1)
     driver.find_element_by_name("prevozenikm").click()
     driver.find_element_by_name("prevozenikm").clear()
     driver.find_element_by_name("prevozenikm").send_keys(randomb)
+    time.sleep(1)
     driver.find_element_by_name("cena").click()
     driver.find_element_by_name("cena").clear()
     driver.find_element_by_name("cena").send_keys(randomc)
+    time.sleep(1)
     driver.find_element_by_name("ADVIEW").click()
-
-
-
-
-
 
     driver.get(url)
     WebDriverWait(driver, 10).until(
@@ -177,8 +229,6 @@ def kopirajInPrilepiPodatke(url):
     time.sleep(5)
     driver.switch_to.alert.accept()
     time.sleep(2)
-
-
 
     #########################################################################################################
     print("=> vstavljam podatke o avtu")
@@ -198,37 +248,44 @@ def kopirajInPrilepiPodatke(url):
             newElement.click()
             newElement.clear()
             newElement.send_keys(inputValues[newInputeElements.index(newElement)])
-        except:
+            time.sleep(1)
+        except Exception as e:
+
             continue
 
-    newTextElements= driver.find_elements_by_tag_name("textarea")
+    newTextElements = driver.find_elements_by_tag_name("textarea")
     for newElement in newTextElements:
         try:
             newElement.click()
             newElement.clear()
             newElement.send_keys(textValues[newTextElements.index(newElement)])
-        except:
+            time.sleep(1)
+        except Exception as  e:
+
             continue
 
     newSelects = driver.find_elements_by_tag_name("select")
     for n in newSelects:
         Select(n).select_by_value(selectValues[newSelects.index(n)])
+        time.sleep(1)
 
     for checkbox in checkedCheckboxes:
         newCheckBox = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.NAME, checkbox)))
         if newCheckBox.is_selected() != True:
             try:
                 newCheckBox.click()
+                time.sleep(1)
             except:
                 try:
                     driver.execute_script("arguments[0].click();", newCheckBox)
+                    time.sleep(1)
                 except:
                     newCheckBox.send_keys(Keys.SPACE)
+                    time.sleep(1)
     porabaOBJAVI = driver.find_element_by_name("porabaOBJAVI")
     if porabaOBJAVI.is_selected():
         porabaOBJAVI.click()
     print("=> podatki vstavljeni v nov oglas ")
-
 
 
 def dodajSlike():
@@ -241,6 +298,12 @@ def dodajSlike():
     imenaSlik.sort()
     time.sleep(2)
     try:
+        WebDriverWait(driver, 10).until(
+            ec.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[3]/div[3]/a/strong"))).click()
+    except:
+        print("")
+    time.sleep(5)
+    try:
         driver.find_element_by_xpath(
             "//*[text()='Ali bi raje fotografije objavili 1 po 1, posamično? Kliknite tukaj za posamično dodajanje fotografij.']").click()
         for imeDatoteke in imenaSlik:
@@ -251,6 +314,7 @@ def dodajSlike():
                 driver.find_element_by_name("fotografija").send_keys(celoIme)
                 driver.find_element_by_name("gumb" + str(n + 1)).click()
                 n = n + 1
+                time.sleep(1)
 
     except:
         for imeDatoteke in imenaSlik:
@@ -264,7 +328,6 @@ def dodajSlike():
 
     print("=> slike so dodane ")
     driver.find_element_by_xpath("//*[contains(text(), 'Zaključi urejanje')]").click()
-    time.sleep(200)
 
 
 def zbrisiOriginalniOglas(url):
@@ -272,11 +335,10 @@ def zbrisiOriginalniOglas(url):
     driver.get(url)
     WebDriverWait(driver, 10).until(
         ec.visibility_of_element_located((By.XPATH, "//*[contains(text(), 'odstrani oglas')]"))).click()
-    WebDriverWait(driver, 10).until(ec.alert_is_present(),"")
+    WebDriverWait(driver, 10).until(ec.alert_is_present(), "")
     time.sleep(5)
     driver.switch_to.alert.accept()
     time.sleep(2)
-
 
     print("=> prvotni oglas je izbrisan ")
 
@@ -287,41 +349,38 @@ def zapriBrowser():
 
 
 def pokaziPopup():
-    tk.messagebox.showinfo("Opozorilo", "Program bo izbrisal oglas/e med procesom ne uporabljajte miške ali \n tipkovnice  in počakajte da se brskalnik samostojno vgasne.", )
+    tk.messagebox.showinfo("Opozorilo",
+                           "Program bo izbrisal oglas/e med procesom ne uporabljajte miške ali \n tipkovnice  in počakajte da se brskalnik samostojno vgasne.", )
 
 
 def main():
-    urlji= []
-    urlji.append(urlEntry1.get())
-    try:
-        urlji.append(urlEntry2.get())
-    except:
-        print("")
-    try:
-        urlji.append(urlEntry3.get())
-    except:
-        print("")
-    try:
-        urlji.append(urlEntry4.get())
-    except:
-        print("")
-    try:
-        urlji.append(urlEntry5.get())
-    except:
-        print("")
+    pause = int(pauseEntry.get())
+
+    urlji = []
     root.withdraw()
     global driver
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+
+    #chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     print("=> vsi gonilniki uspešno pridobljeni")
 
     driver.get("https://www.avto.net/_2016mojavtonet/")
     driver.maximize_window()
     global originalOglasWindow
-    originalOglasWindow = driver.window_handles[0]
-    login(email, geslo)
-    print("=> pridobivam potrebne gonilnike")
+    originalOglasWindow = driver.current_window_handle
+    try:
+        login(email, geslo)
+
+    except:
+        WebDriverWait(driver, 10000).until(ec.visibility_of_element_located((By.NAME, "enaslov")))
+        login(email, geslo)
+    urljiFile = open("oglasi.txt","r")
+    urlji = urljiFile.readlines()
+
+
+
+
     for url in urlji:
         urlOglasa = url
         pojdiNaUredi(urlOglasa)
@@ -332,50 +391,14 @@ def main():
         time.sleep(2)
         zapriBrowser()
         driver.close()
-        driver.switch_to.window(driver.window_handles[0])
-        print("Obnovil sem toliko oglasov:"+str(urlji.index(url)+1))
-
+        driver.switch_to.window(originalOglasWindow)
+        print("Obnovil sem toliko oglasov:" + str(urlji.index(url) + 1))
+        time.sleep(pause * 60)
 
     print(">>>PROCES USPEŠNO ZAKLJUČEN<<<")
     time.sleep(3)
     driver.quit()
     root.deiconify()
-
-
-def showUrlEntries(number):
-    global urlEntry1,urlEntry2,urlEntry3,urlEntry4,urlEntry5
-    number = int(number)
-    if number>0:
-        label2 = tk.Label(root, text='URL oglasa 1:')
-        label2.config(font=('helvetica', 9))
-        canvas1.create_window(380, 100, window=label2)
-        urlEntry1 = tk.Entry(root)
-        canvas1.create_window(500, 100, window=urlEntry1)
-        if number > 1:
-            label10 = tk.Label(root, text='URL oglasa 2:')
-            label10.config(font=('helvetica', 9))
-            canvas1.create_window(380, 120, window=label10)
-            urlEntry2 = tk.Entry(root)
-            canvas1.create_window(500, 120, window=urlEntry2)
-            if number > 2:
-                label11 = tk.Label(root, text='URL oglasa 3:')
-                label11.config(font=('helvetica', 9))
-                canvas1.create_window(380, 140, window=label11)
-                urlEntry3 = tk.Entry(root)
-                canvas1.create_window(500, 140, window=urlEntry3)
-                if number > 3:
-                    label12 = tk.Label(root, text='URL oglasa 4:')
-                    label12.config(font=('helvetica', 9))
-                    canvas1.create_window(380, 160, window=label12)
-                    urlEntry4 = tk.Entry(root)
-                    canvas1.create_window(500, 160, window=urlEntry4)
-                    if number > 4:
-                        label13 = tk.Label(root, text='URL oglasa 5:')
-                        label13.config(font=('helvetica', 9))
-                        canvas1.create_window(380, 180, window=label13)
-                        urlEntry5 = tk.Entry(root)
-                        canvas1.create_window(500, 180, window=urlEntry5)
-
 
 
 print("=> program se zaganja...")
@@ -386,18 +409,14 @@ canvas1 = tk.Canvas(root, width=600, height=300, relief='raised')
 image = ImageTk.PhotoImage(Image.open("avtonetdata/img/tkinterozadje.jpg"))
 canvas1.create_image(0, 0, anchor=tk.NW, image=image)
 canvas1.pack()
-labelDrop = tk.Label(root, text='Število oglasov ki jih žeite ponovno objaviti:')
-labelDrop.config(font=('helvetica', 9))
-canvas1.create_window(300, 30, window=labelDrop)
-clicked = tk.StringVar()
-clicked.set("1")
-drop = tk.OptionMenu(root,clicked,"1","2","3","4","5")
-canvas1.create_window(450,30,window=drop)
-button2 = tk.Button(text='Vnesi Urlj-je oglasov', command=lambda: [showUrlEntries(clicked.get())], bg='white', fg='black',
-                    font=('helvetica', 10, 'bold'))
-canvas1.create_window(400, 70, window=button2)
+label2 = tk.Label(root, text='Premor med oglasi(min):')
+label2.config(font=('helvetica', 9))
+canvas1.create_window(395, 240, window=label2)
+pauseEntry = tk.Entry(root)
+canvas1.create_window(530, 240, window=pauseEntry)
 
-button1 = tk.Button(text='Izbriši in ponovno ustvari oglas', command=lambda: [main()], bg='white', fg='black',font=('helvetica', 10, 'bold'))
+button1 = tk.Button(text='Izbriši in ponovno ustvari vse oglase', command=lambda: [main()], bg='white', fg='black',
+                    font=('helvetica', 10, 'bold'))
 canvas1.create_window(467, 270, window=button1)
 if os.path.getsize("avtonetdata/mailgeslo.txt") == 0:
     email = simpledialog.askstring("Prva uporaba programa", "vnesite email naslov za avto.net")
@@ -417,22 +436,33 @@ with open("avtonetdata/mailgeslo.txt", "r") as file:
 email = gesloinime[0]
 geslo = gesloinime[1]
 
-scope = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
+scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("avtonetdata/creds.json", scope)
 client = gspread.authorize(creds)
 sheet = client.open("avtonetbot dostop").sheet1  # Open the spreadhseet
 
 try:
+
     emailRow = sheet.find(email).row
-    placanoCell = sheet.cell(emailRow,2).value.strip()
+    print("Email najden v podatkovni bazi.")
+    placanoCell = sheet.cell(emailRow, 2).value.strip()
+    print("$$")
     if placanoCell == "NE":
         print("NISTE NAROČENI NA PROGRAM!")
         print("ZA NAKUP PROGRAMA PIŠITE NA gal.jeza@protonmail.com")
         print("ČE STE NAROČENI NA PROGRAM IN VSEENO VIDITE TO SPOROČILO ME KONTAKTIRAJTE")
     else:
+        print("€€")
+        usage = sheet.cell(emailRow,3).value.strip()
+        usage = int(usage) +1
+        sheet.update_cell(emailRow,3,str(usage))
+
         root.mainloop()
-except:
+except(err):
+    print(err)
+    print("google sheets eroor")
     print("NISTE NAROČENI NA PROGRAM!")
     print("ZA NAKUP PROGRAMA PIŠITE NA gal.jeza@protonmail.com")
     print("ČE STE NAROČENI NA PROGRAM IN VSEENO VIDITE TO SPOROČILO ME KONTAKTIRAJTE")
-
+    time.sleep(30)
