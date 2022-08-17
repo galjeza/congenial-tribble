@@ -171,8 +171,13 @@ def pridobiPodatkeZaPrvoStran():
     mesReg = select.first_selected_option.text.strip()
 
     gorivo = driver.find_element_by_name("gorivo").get_attribute("value")
+    
     if gorivo == "elektro pogon":
         gorivo = "e-pogon"
+    if gorivo == "CNG plin":
+        gorivo = "CNG zemeljski plin"
+    if gorivo == "LPG plin":
+        gorivo = "LPG avtoplin"       
 
     print("=> osnovni podatki o avtu pridobljeni ")
 
