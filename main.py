@@ -201,8 +201,8 @@ def kopirajInPrilepiPodatke(url):
     time.sleep(3)
     for select in selectElements:
         time.sleep(1)
-        selectedOption = Select(select).first_selected_option.get_attribute("value")
-
+        selectedOption = Select(select).first_selected_option.text
+        
         selectValues.append(selectedOption)
 
     checkedCheckboxes = []
@@ -284,8 +284,19 @@ def kopirajInPrilepiPodatke(url):
 
     newSelects = driver.find_elements_by_tag_name("select")
     for n in newSelects:
-        Select(n).select_by_value(selectValues[newSelects.index(n)])
-        time.sleep(1)
+        try:
+           
+           selectedOption = selectValues[newSelects.index(n)]
+           driver.execute_script("arguments[0].scrollIntoView();", n)
+           n.click()
+           time.sleep(1) 
+           Select(n).select_by_visible_text(selectedOption)
+           time.sleep(1)   
+        except Exception as  e:
+            print("SELECT ERR")
+            continue
+                                 
+        
 
     for checkbox in checkedCheckboxes:
         newCheckBox = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.NAME, checkbox)))
@@ -300,9 +311,13 @@ def kopirajInPrilepiPodatke(url):
                 except:
                     newCheckBox.send_keys(Keys.SPACE)
                     time.sleep(1)
-    porabaOBJAVI = driver.find_element_by_name("porabaOBJAVI")
-    if porabaOBJAVI.is_selected():
-        porabaOBJAVI.click()
+    try:
+         porabaOBJAVI = driver.find_element_by_name("porabaOBJAVI")
+         if porabaOBJAVI.is_selected():
+             porabaOBJAVI.click() 
+    except:
+           print("e")
+   
     print("=> podatki vstavljeni v nov oglas ")
 
 
