@@ -394,6 +394,10 @@ def main():
     global driver
     chrome_options = Options()
 
+    version = "114.0.5735.16"
+    if(email == "avtolan1@gmail.com"):
+        chromeVersion = "116.0.5791.0"  
+           
     #chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(ChromeDriverManager(version="114.0.5735.16").install(), options=chrome_options)
     print("=> vsi gonilniki uspešno pridobljeni")
