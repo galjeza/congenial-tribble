@@ -396,7 +396,7 @@ def main():
 
     chromeVersion = "114.0.5735.16"
     if(email == "avtolan1@gmail.com"):
-        chromeVersion = "116.0.5845.0"  
+        chromeVersion = "116.0.5845.97"  
            
     #chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(ChromeDriverManager(version=chromeVersion).install(), options=chrome_options)
